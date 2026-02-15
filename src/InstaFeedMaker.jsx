@@ -146,6 +146,19 @@ const TITLE_EMPHASIS_OPTIONS = [
   { id: 'first_line_large', name: '1行目特大', prompt: 'The first line of the title text should be much larger (2x) than subsequent lines, creating a bold header with smaller subtext below' },
 ];
 
+// --- 見出しスタイル定義（導入・コンテンツ・まとめ共通） ---
+const HEADING_STYLES = [
+  { id: 'band_full', name: '上部帯（端まで）', icon: Maximize, prompt: 'Header band pinned to the very top edge with NO top margin — a solid colored rectangular strip spanning the full width (edge-to-edge, zero margin on all sides of the band). The heading text is bold white, centered inside the band.' },
+  { id: 'band_inset', name: '上部帯（余白あり）', icon: Square, prompt: 'Header band near the top WITH margin/padding — a solid colored rectangular strip with rounded corners, inset from the left and right edges (about 5% margin on each side), with a small top margin (about 3%). The heading text is bold white, centered inside the band. Looks like a floating label card.' },
+];
+
+// --- コンテンツボックススタイル定義 ---
+const CONTENT_BOX_STYLES = [
+  { id: 'none', name: 'なし', prompt: 'No background box or frame for the content area. Text and image are placed directly on the slide background.' },
+  { id: 'white_full', name: '白ボックス（全体）', prompt: 'The entire content area below the heading band is covered by a large white/light semi-transparent background box (rounded corners, subtle shadow). All content (image + text) sits inside this single unified white box.' },
+  { id: 'white_frame', name: '白ボックス（外枠）', prompt: 'The content area below the heading band has a white/light bordered frame — a visible border/outline (not filled solid) with rounded corners creating an elegant card-like frame. Content sits inside this outlined frame.' },
+];
+
 const POSITIONS = [
   { id: 'top_left', icon: ArrowUpLeft, label: '左上' },
   { id: 'top_right', icon: ArrowUpRight, label: '右上' },
@@ -176,6 +189,27 @@ function isLightColor(hex) {
 }
 
 // --- サブコンポーネント ---
+
+/** ヘルプチップ — ℹ アイコンをクリックすると説明がトグル表示 */
+const HelpTip = ({ text }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="inline-flex items-center ml-1 relative">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 flex items-center justify-center text-[9px] font-bold leading-none transition-colors"
+        aria-label="ヘルプ"
+      >?</button>
+      {open && (
+        <div className="absolute left-0 top-5 z-50 w-56 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg shadow-lg">
+          {text}
+          <div className="absolute -top-1 left-1.5 w-2 h-2 bg-slate-800 rotate-45" />
+        </div>
+      )}
+    </span>
+  );
+};
 
 /** 小型画像アップロードUI（キャラ画像・参考画像の共通コンポーネント） */
 const MiniImageUpload = ({ label, icon: IconComp, image, setImage, accentColor = 'pink' }) => {
@@ -239,7 +273,7 @@ const MiniImageUpload = ({ label, icon: IconComp, image, setImage, accentColor =
 /** 参考画像アップロードUI（テイスト参考用） */
 const RefImageUpload = ({ refImage, setRefImage }) => (
   <MiniImageUpload
-    label="参考画像（テイスト参考）"
+    label="参考画像（テイスト参考） ※色味やレイアウトの参考にしたい画像をアップロード"
     icon={ImageIcon}
     image={refImage}
     setImage={setRefImage}
@@ -261,7 +295,7 @@ const SectionBgSettings = ({ bg, setBg, frameColor }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Palette className="w-3.5 h-3.5 text-emerald-500" />
-          <span className="text-[10px] font-bold text-slate-500">背景設定</span>
+          <span className="text-[10px] font-bold text-slate-500">背景設定<HelpTip text="このスライド固有の背景を設定できます。「個別設定ON」にすると全体設定とは別の背景を使えます。OFFの場合はグローバル設定に従います。" /></span>
         </div>
         <button
           onClick={() => updateBg('type', isCustom ? null : 'theme')}
@@ -367,11 +401,11 @@ const CharacterSettingsUI = ({ exp, setExp, pos, setPos, bubble, setBubble, bubb
   <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 mt-2 space-y-3">
     <div className="flex items-center gap-2 mb-1">
       <Smile className="w-4 h-4 text-pink-500" />
-      <span className="text-xs font-bold text-slate-500">このスライドのキャラ設定</span>
+      <span className="text-xs font-bold text-slate-500">このスライドのキャラ設定<HelpTip text="このスライド固有のキャラクター設定です。表情・配置・ふきだしをスライドごとに変えられます。" /></span>
     </div>
 
     <div className="space-y-1">
-      <label className="text-[10px] font-bold text-slate-400">表情・ポーズ</label>
+      <label className="text-[10px] font-bold text-slate-400">表情・ポーズ<HelpTip text="キャラクターの表情やポーズを指定します。例：「笑顔で指差し」「困った顔」「サムズアップ」など。" /></label>
       <input
         type="text"
         value={exp || ''}
@@ -444,6 +478,8 @@ export default function InstaFeedMaker() {
   const [selectedTheme, setSelectedTheme] = useState('modern_lifestyle');
   const [fontStyle, setFontStyle] = useState('bold_sans');
   const [globalTextAlign, setGlobalTextAlign] = useState('center');
+  const [headingStyle, setHeadingStyle] = useState('band_full');
+  const [contentBoxStyle, setContentBoxStyle] = useState('white_full');
   const [bgType, setBgType] = useState('theme');
   const [customBgColor, setCustomBgColor] = useState('#E2E8F0');
   const [bgDesc, setBgDesc] = useState('');
@@ -480,7 +516,7 @@ export default function InstaFeedMaker() {
 
   const [introText, setIntroText] = useState('「フォロワーが増えない...」\n「投稿ネタがない...」\nそんな悩みを解決する\n最強のメソッドを公開します。');
   const [introCharExp, setIntroCharExp] = useState('困った顔で悩んでいるポーズ');
-  const [introCharPos, setIntroCharPos] = useState('top_right');
+  const [introCharPos, setIntroCharPos] = useState('bottom_left');
   const [introBubble, setIntroBubble] = useState(true);
   const [introBubbleText, setIntroBubbleText] = useState('要チェック！');
   const [introCharImage, setIntroCharImage] = useState(null);
@@ -770,19 +806,32 @@ export default function InstaFeedMaker() {
         p += `Design: Eye-catching, high contrast. `;
       }
     } else if (type === 'intro') {
+      const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
       p += `LAYOUT: Introduction Slide. `;
-      p += `TOP HEADER: Display the main title "${coverTitle.replace(/\n/g, ' ')}" on a stylish header band strip at the very top. `;
+      p += `HEADING: "${coverTitle.replace(/\n/g, ' ')}" (in Japanese). Heading style: ${headingObj.prompt} `;
       p += `TEXT: "${introText.replace(/\n/g, ' ')}" (in Japanese) clearly written in the main area. `;
-      p += `Design: Storytelling vibe.`;
+      p += `Design: Storytelling vibe. `;
     } else if (type === 'main' && data) {
-      p += `LAYOUT: Content Slide. Structure: Top header band, Center Image, Bottom text area. `;
-      p += `TOP: Header strip band with title "${data.title}" (in Japanese). `;
+      const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
+      const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
+      p += `LAYOUT: Content Slide. Structure: Top heading band, Center Image, Bottom text area. `;
+      p += `HEADING: "${data.title}" (in Japanese). Heading style: ${headingObj.prompt} `;
       p += `CENTER: Main visual is (${data.imageDesc}). `;
       p += `BOTTOM: Short explanation text area "${data.text.replace(/\n/g, ' ')}" (in Japanese). `;
+      if (boxObj.id !== 'none') {
+        p += `Content Box: ${boxObj.prompt} `;
+      }
+      p += `**UNIFORMITY RULE**: All content slides (slides 3-9) MUST look identical in layout structure — same heading band (style, color, width, height), same box style, same background, same margins. Match the design of slide 3 exactly. `;
     } else if (type === 'summary') {
+      const headingObj = HEADING_STYLES.find(h => h.id === headingStyle) || HEADING_STYLES[0];
+      const boxObj = CONTENT_BOX_STYLES.find(b => b.id === contentBoxStyle) || CONTENT_BOX_STYLES[0];
       p += `LAYOUT: Summary/Conclusion Slide. `;
-      p += `TOP: Header strip band with title "まとめ" or "SUMMARY". `;
+      p += `HEADING: "まとめ" (in Japanese). Heading style: ${headingObj.prompt} Same heading band as content slides. `;
+      if (boxObj.id !== 'none') {
+        p += `Content Box: ${boxObj.prompt} `;
+      }
       p += `CONTENT: Bullet point list in Japanese: ${summaryItems.join(', ')}. `;
+      p += `Match the same layout structure (heading band, box style, background, margins) as content slides. `;
     }
 
     if (slideBg.type === 'theme') {
@@ -1242,7 +1291,7 @@ export default function InstaFeedMaker() {
             </div>
             <div className="p-6 space-y-5">
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-2">Gemini APIキー</label>
+                <label className="text-xs font-bold text-slate-500 block mb-2">Gemini APIキー<HelpTip text="Google AI StudioでGemini APIキーを取得して入力してください。画像生成・AI構成機能に必要です。キーはこのブラウザのみに保存され、外部には送信されません。" /></label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <input
@@ -1296,7 +1345,7 @@ export default function InstaFeedMaker() {
                 >
                   <div className="flex items-center gap-2">
                     <Palette className="w-4 h-4 text-slate-500" />
-                    <span className="text-xs font-bold text-slate-500 uppercase">テーマ</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase">テーマ</span><HelpTip text="投稿全体の雰囲気を決めるベーススタイルです。背景・配色・フォントのトーンがテーマに応じて変わります。" />
                     <span className="text-sm font-bold text-slate-800">{THEMES[selectedTheme].name}</span>
                   </div>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${themeDropdownOpen ? 'rotate-180' : ''}`} />
@@ -1323,7 +1372,7 @@ export default function InstaFeedMaker() {
               <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
                   <h2 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                    <Droplets className="w-4 h-4" /> メインカラー
+                    <Droplets className="w-4 h-4" /> メインカラー<HelpTip text="ONにすると、見出し帯・枠・アクセント色を好きな色に統一できます。OFFの場合はテーマのデフォルト色が使われます。" />
                   </h2>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={useCustomMainColor} onChange={() => setUseCustomMainColor(!useCustomMainColor)} />
@@ -1373,7 +1422,7 @@ export default function InstaFeedMaker() {
                 </div>
                 <div className="p-4 space-y-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-2">フォントスタイル</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-2">フォントスタイル<HelpTip text="画像内に表示されるテキストの書体です。太字ゴシック＝力強い印象、明朝体＝上品・知的、手書き風＝親しみやすさ。" /></label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {FONT_STYLES.map(f => (
                         <button
@@ -1391,10 +1440,100 @@ export default function InstaFeedMaker() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-2">文字の配置</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-2">文字の配置<HelpTip text="スライド内のテキストを左揃え・中央揃えのどちらにするか。情報系は左揃え、デザイン重視は中央揃えが一般的です。" /></label>
                     <div className="flex bg-slate-100 p-1 rounded-lg">
                       <button onClick={() => setGlobalTextAlign('left')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold ${globalTextAlign === 'left' ? 'bg-white text-pink-600 shadow-sm' : 'text-slate-500'}`}><AlignLeft className="w-3 h-3" /> 左揃え</button>
                       <button onClick={() => setGlobalTextAlign('center')} className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-xs font-bold ${globalTextAlign === 'center' ? 'bg-white text-pink-600 shadow-sm' : 'text-slate-500'}`}><AlignCenter className="w-3 h-3" /> 中央揃え</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* 見出し・ボックススタイル */}
+              <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                  <h2 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
+                    <Maximize className="w-4 h-4" /> 見出し・ボックス
+                  </h2>
+                </div>
+                <div className="p-4 space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 block mb-2">見出し帯スタイル<HelpTip text="導入・コンテンツ・まとめスライドの上部に表示される見出し帯のデザインです。端まで帯＝画面いっぱいに広がる帯、余白あり＝少し内側に配置される角丸の帯。" /></label>
+                    <p className="text-[10px] text-slate-400 mb-2">導入・コンテンツ・まとめ共通</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {HEADING_STYLES.map(h => (
+                        <button
+                          key={h.id}
+                          onClick={() => setHeadingStyle(h.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                            headingStyle === h.id
+                              ? 'border-pink-500 bg-pink-50'
+                              : 'border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`w-16 h-10 rounded border flex-shrink-0 flex flex-col overflow-hidden ${
+                            headingStyle === h.id ? 'border-pink-400' : 'border-slate-300'
+                          }`}>
+                            {h.id === 'band_full' ? (
+                              <>
+                                <div className="h-3 bg-pink-500 w-full" />
+                                <div className="flex-1 bg-slate-100" />
+                              </>
+                            ) : (
+                              <>
+                                <div className="h-1 bg-transparent" />
+                                <div className="h-3 bg-pink-500 mx-1 rounded-sm" />
+                                <div className="flex-1 bg-slate-100" />
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <span className={`text-xs font-bold block ${headingStyle === h.id ? 'text-pink-700' : 'text-slate-600'}`}>{h.name}</span>
+                            <span className="text-[9px] text-slate-400">{h.id === 'band_full' ? '端から端まで帯' : '余白付き帯（角丸）'}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 block mb-2">コンテンツボックス<HelpTip text="コンテンツスライド（3〜9枚目）の見出し帯の下エリアのデザイン。なし＝背景に直接配置、白ボックス全体＝白い背景で覆う、白ボックス外枠＝枠線だけ表示。" /></label>
+                    <p className="text-[10px] text-slate-400 mb-2">3〜9枚目共通の中身エリア</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {CONTENT_BOX_STYLES.map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => setContentBoxStyle(b.id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${
+                            contentBoxStyle === b.id
+                              ? 'border-pink-500 bg-pink-50'
+                              : 'border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className={`w-16 h-10 rounded border flex-shrink-0 flex flex-col overflow-hidden ${
+                            contentBoxStyle === b.id ? 'border-pink-400' : 'border-slate-300'
+                          }`}>
+                            {b.id === 'none' ? (
+                              <div className="flex-1 bg-slate-100 flex items-center justify-center">
+                                <span className="text-[8px] text-slate-400">−</span>
+                              </div>
+                            ) : b.id === 'white_full' ? (
+                              <>
+                                <div className="h-2.5 bg-pink-500 w-full" />
+                                <div className="flex-1 bg-white m-0.5 rounded-sm" />
+                              </>
+                            ) : (
+                              <>
+                                <div className="h-2.5 bg-pink-500 w-full" />
+                                <div className="flex-1 border border-slate-300 m-0.5 rounded-sm bg-transparent" />
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <span className={`text-xs font-bold block ${contentBoxStyle === b.id ? 'text-pink-700' : 'text-slate-600'}`}>{b.name}</span>
+                            <span className="text-[9px] text-slate-400">{b.id === 'none' ? '背景に直接配置' : b.id === 'white_full' ? '白背景で全面カバー' : '枠線のみ（中は透過）'}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1409,7 +1548,7 @@ export default function InstaFeedMaker() {
                 </div>
                 <div className="p-4 space-y-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-2">背景タイプ（デフォルト）</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-2">背景タイプ（デフォルト）<HelpTip text="全スライド共通のベース背景です。白＝シンプル、無地＝好きな色、テーマ＝テーマに沿った背景、枠+白＝装飾枠付き、画像＝写真やテクスチャ。各スライドで個別変更も可能。" /></label>
                     <div className="grid grid-cols-3 gap-2 mb-2">
                       <button onClick={() => setBgType('white')} className={`py-2 rounded-md text-xs font-bold border ${bgType === 'white' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-slate-200 text-slate-500'}`}>白背景</button>
                       <button onClick={() => setBgType('solid')} className={`py-2 rounded-md text-xs font-bold border ${bgType === 'solid' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-slate-200 text-slate-500'}`}>無地(色)</button>
@@ -1440,7 +1579,7 @@ export default function InstaFeedMaker() {
                     )}
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 block mb-1">背景の特徴・詳細（デフォルト）</label>
+                    <label className="text-xs font-bold text-slate-400 block mb-1">背景の特徴・詳細（デフォルト）<HelpTip text="AIに背景の具体的なイメージを伝えるテキストです。例：「桜が舞う春の公園」「カフェの内装」など。空欄でもOK。" /></label>
                     <textarea
                       value={bgDesc}
                       onChange={(e) => setBgDesc(e.target.value)}
@@ -1457,7 +1596,7 @@ export default function InstaFeedMaker() {
               <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
                   <h2 className="text-xs font-bold text-slate-500 uppercase flex items-center gap-2">
-                    <User className="w-4 h-4" /> キャラクター基本設定
+                    <User className="w-4 h-4" /> キャラクター基本設定<HelpTip text="スライドに登場する人物キャラクターの設定です。ONにすると全スライドにキャラクターが配置されます。テキストで特徴を指定するか、参考画像をアップロードできます。" />
                   </h2>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={useCharacter} onChange={() => setUseCharacter(!useCharacter)} />
@@ -1469,7 +1608,7 @@ export default function InstaFeedMaker() {
                   <div className="p-4 space-y-4">
 
                     <div>
-                      <label className="text-xs font-bold text-slate-400 block mb-2">サイズ（表示の大きさ）</label>
+                      <label className="text-xs font-bold text-slate-400 block mb-2">サイズ（表示の大きさ）<HelpTip text="キャラクターの表示サイズ。ちびキャラ＝デフォルメされた極小サイズ、小＝全身が見える、中＝上半身、大＝顔のアップ。" /></label>
                       <div className="grid grid-cols-2 gap-2">
                         {['chibi', 'small', 'medium', 'large'].map((size) => (
                           <button
@@ -1584,7 +1723,7 @@ export default function InstaFeedMaker() {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <label className="text-xs font-bold text-slate-400 block mb-1">サブタイトル（強調表示）</label>
+                        <label className="text-xs font-bold text-slate-400 block mb-1">サブタイトル（強調表示）<HelpTip text="表紙の上部に小さく表示されるキャッチコピーです。例：「初心者さんOK！」「保存版」。空欄でもOK。" /></label>
                         <input
                           type="text"
                           className="w-full text-sm font-bold p-2 border border-slate-200 rounded-lg focus:border-pink-500 outline-none"
@@ -1594,7 +1733,7 @@ export default function InstaFeedMaker() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-slate-400 block mb-1">メインタイトル</label>
+                        <label className="text-xs font-bold text-slate-400 block mb-1">メインタイトル<HelpTip text="表紙の中央に大きく表示されるタイトルです。改行で複数行にできます。インパクトのある短い文が効果的。" /></label>
                         <textarea className="w-full text-lg font-bold p-3 border-2 border-slate-100 rounded-lg focus:border-pink-500 focus:ring-2 focus:ring-pink-200 outline-none resize-none" rows={3} value={coverTitle} onChange={(e) => setCoverTitle(e.target.value)} />
                       </div>
                     </div>
@@ -1603,7 +1742,7 @@ export default function InstaFeedMaker() {
                     <div className="space-y-3">
                       {/* Layer 1: レイアウト */}
                       <div>
-                        <label className="text-xs font-bold text-pink-400 block mb-1.5">🎨 レイアウト</label>
+                        <label className="text-xs font-bold text-pink-400 block mb-1.5">🎨 レイアウト<HelpTip text="表紙のタイトルと背景の組み合わせ方です。シンプル＝テキスト直置き、帯＝帯状バナー、ダークオーバーレイ＝暗い半透明、ポップ枠＝装飾枠、カード型＝浮いたカード、対角線＝斜めレイアウト。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {COVER_LAYOUTS.map((style) => {
                             const Icon = style.icon;
@@ -1626,7 +1765,7 @@ export default function InstaFeedMaker() {
                       </div>
                       {/* Layer 2: タイトルデザイン */}
                       <div>
-                        <label className="text-xs font-bold text-violet-400 block mb-1.5">✏️ タイトルデザイン</label>
+                        <label className="text-xs font-bold text-violet-400 block mb-1.5">✏️ タイトルデザイン<HelpTip text="タイトル文字自体の装飾スタイルです。ドロップシャドウ＝影付き、枠文字＝縁取り、マーカー＝蛍光ペン風、グラデーション＝色変化、白フチ＝漫画風。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {TITLE_DESIGNS.map((style) => {
                             const Icon = style.icon;
@@ -1649,7 +1788,7 @@ export default function InstaFeedMaker() {
                       </div>
                       {/* Layer 3: サブタイトル装飾 */}
                       <div>
-                        <label className="text-xs font-bold text-amber-400 block mb-1.5">🏷️ サブタイトル装飾</label>
+                        <label className="text-xs font-bold text-amber-400 block mb-1.5">🏷️ サブタイトル装飾<HelpTip text="サブタイトルの装飾です。ピル型＝丸いバッジ、タグ風＝値札風、吹き出し＝セリフ風、下線＝下線アクセント、なし＝装飾なし。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {SUBTITLE_DESIGNS.map((style) => {
                             const Icon = style.icon;
@@ -1678,7 +1817,7 @@ export default function InstaFeedMaker() {
 
                       {/* スワイプ誘導 */}
                       <div>
-                        <label className="text-xs font-bold text-cyan-500 block mb-1.5">👆 スワイプ誘導</label>
+                        <label className="text-xs font-bold text-cyan-500 block mb-1.5">👆 スワイプ誘導<HelpTip text="表紙にスワイプを促す要素を追加します。枚数バッジ＝「全10枚」表示、スワイプ矢印＝矢印アイコン、チラ見せ＝次スライドがチラッと見える演出。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {SWIPE_GUIDES.map((item) => (
                             <button
@@ -1698,7 +1837,7 @@ export default function InstaFeedMaker() {
 
                       {/* アイキャッチバッジ */}
                       <div>
-                        <label className="text-xs font-bold text-orange-500 block mb-1.5">🏅 アイキャッチバッジ</label>
+                        <label className="text-xs font-bold text-orange-500 block mb-1.5">🏅 アイキャッチバッジ<HelpTip text="表紙に目を引くバッジを配置します。数字強調＝「TOP5」等の大きい数字、ラベル＝「保存版」等のバッジ、リボン＝角のリボン装飾。" /></label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {EYE_CATCH_BADGES.map((item) => (
                             <button
@@ -1718,7 +1857,7 @@ export default function InstaFeedMaker() {
 
                       {/* 装飾エフェクト */}
                       <div>
-                        <label className="text-xs font-bold text-purple-500 block mb-1.5">✨ 装飾エフェクト</label>
+                        <label className="text-xs font-bold text-purple-500 block mb-1.5">✨ 装飾エフェクト<HelpTip text="表紙に追加する装飾効果です。キラキラ＝光の粒子、幾何学＝図形パターン、グラデオーバーレイ＝色のグラデ、ノイズ＝フィルム風の粒子感。" /></label>
                         <div className="grid grid-cols-3 gap-1.5">
                           {DECO_EFFECTS.map((item) => (
                             <button
@@ -1738,7 +1877,7 @@ export default function InstaFeedMaker() {
 
                       {/* 余白・マージン */}
                       <div>
-                        <label className="text-xs font-bold text-teal-500 block mb-1.5">📐 余白・マージン</label>
+                        <label className="text-xs font-bold text-teal-500 block mb-1.5">📐 余白・マージン<HelpTip text="表紙コンテンツ周りの余白量です。フルブリード＝余白なし（端まで使う）、少し〜たっぷりで余白が増えていきます。余白が多いほど高級感が出ます。" /></label>
                         <div className="grid grid-cols-4 gap-1.5">
                           {MARGIN_LEVELS.map((item) => (
                             <button
@@ -1758,7 +1897,7 @@ export default function InstaFeedMaker() {
 
                       {/* タイトル文字サイズ強弱 */}
                       <div>
-                        <label className="text-xs font-bold text-rose-500 block mb-1.5">🔤 タイトル強弱</label>
+                        <label className="text-xs font-bold text-rose-500 block mb-1.5">🔤 タイトル強弱<HelpTip text="タイトル内の文字サイズにメリハリをつけます。均一＝全て同じサイズ、キーワード特大＝重要な語だけ大きく、1行目特大＝最初の行を大きく。" /></label>
                         <div className="grid grid-cols-3 gap-1.5">
                           {TITLE_EMPHASIS_OPTIONS.map((item) => (
                             <button
@@ -1791,7 +1930,7 @@ export default function InstaFeedMaker() {
                       <span className="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded font-bold">2枚目</span>
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-400 block mb-1">導入テキスト</label>
+                      <label className="text-xs font-bold text-slate-400 block mb-1">導入テキスト<HelpTip text="読者の共感を得るためのリード文です。「こんな悩みありませんか？」のような問いかけが効果的。表紙の次（2枚目）に表示されます。" /></label>
                       <textarea className="w-full text-sm p-3 border border-slate-200 rounded-lg focus:border-pink-500 outline-none resize-none" rows={4} value={introText} onChange={(e) => setIntroText(e.target.value)} />
                     </div>
                     {useCharacter && <CharacterSettingsUI exp={introCharExp} setExp={setIntroCharExp} pos={introCharPos} setPos={setIntroCharPos} bubble={introBubble} setBubble={setIntroBubble} bubbleText={introBubbleText} setBubbleText={setIntroBubbleText} charImage={introCharImage} setCharImage={setIntroCharImage} />}
@@ -1813,16 +1952,16 @@ export default function InstaFeedMaker() {
                           <div className="absolute -left-2 -top-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-sm z-10">{index + 3}</div>
                           <div className="space-y-3">
                             <div>
-                              <label className="text-xs font-bold text-slate-400 block mb-1">ページタイトル</label>
+                              <label className="text-xs font-bold text-slate-400 block mb-1">ページタイトル<HelpTip text="見出し帯に表示されるタイトルです。短くわかりやすい見出しにしましょう。" /></label>
                               <input type="text" value={slide.title} onChange={(e) => updateMainSlide(index, 'title', e.target.value)} className="w-full font-bold text-slate-800 bg-white border border-slate-200 rounded px-2 py-1.5 focus:border-pink-500 outline-none" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
-                                <label className="text-xs font-bold text-slate-400 block mb-1">画像の説明</label>
+                                <label className="text-xs font-bold text-slate-400 block mb-1">画像の説明<HelpTip text="AIが生成する中央画像の内容を説明します。「スマホの画面」「グラフ」など具体的に書くほど精度が上がります。" /></label>
                                 <textarea rows={3} value={slide.imageDesc} onChange={(e) => updateMainSlide(index, 'imageDesc', e.target.value)} className="w-full text-sm bg-white border border-slate-200 rounded px-2 py-1.5 focus:border-pink-500 outline-none resize-none" />
                               </div>
                               <div>
-                                <label className="text-xs font-bold text-slate-400 block mb-1">下部の説明文</label>
+                                <label className="text-xs font-bold text-slate-400 block mb-1">下部の説明文<HelpTip text="スライド下部に表示される解説テキストです。2〜3行程度で、ポイントを簡潔にまとめましょう。" /></label>
                                 <textarea value={slide.text} onChange={(e) => updateMainSlide(index, 'text', e.target.value)} rows={4} className="w-full text-sm bg-white border border-slate-200 rounded px-2 py-1.5 focus:border-pink-500 outline-none resize-none" />
                               </div>
                             </div>
@@ -1853,7 +1992,7 @@ export default function InstaFeedMaker() {
                       <span className="bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded font-bold">10枚目</span>
                     </div>
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                      <label className="text-xs font-bold text-slate-400 block mb-2">箇条書きリスト</label>
+                      <label className="text-xs font-bold text-slate-400 block mb-2">箇条書きリスト<HelpTip text="最終スライドに箇条書きで表示される要点のリストです。投稿の内容を3〜5個のポイントにまとめましょう。「項目を追加」で増やせます（最大7個）。" /></label>
                       <div className="space-y-2">
                         {summaryItems.map((item, index) => (
                           <div key={index} className="flex gap-2 items-center bg-white p-1 rounded border border-slate-100">
@@ -1890,7 +2029,7 @@ export default function InstaFeedMaker() {
               <div className="p-6 space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-bold text-slate-600">元になる文章</label>
+                    <label className="text-sm font-bold text-slate-600">元になる文章<HelpTip text="ブログ記事、動画の文字起こし、メモなどを貼り付けてください。AIがこの文章を分析して、10枚のインスタ投稿構成（表紙・導入・コンテンツ・まとめ）を自動で作成します。" /></label>
                     <span className="text-xs text-slate-400">{aiSourceText.length.toLocaleString()} 文字</span>
                   </div>
                   <textarea
