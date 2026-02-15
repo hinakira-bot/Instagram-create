@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Copy, Sparkles, Type, Image as ImageIcon, User, Palette, MonitorPlay, Check,
   Layout, List, FileText, Plus, Trash2, Instagram, Smile, MessageCircle,
@@ -193,19 +194,42 @@ function isLightColor(hex) {
 /** ヘルプチップ — ℹ アイコンをクリックすると説明がトグル表示 */
 const HelpTip = ({ text }) => {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPos({ top: rect.bottom + 4, left: rect.left });
+    }
+  }, [open]);
+
+  // 画面外にはみ出す場合の補正
+  useEffect(() => {
+    if (!open) return;
+    const handleScroll = () => setOpen(false);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [open]);
+
   return (
-    <span className="inline-flex items-center ml-1 relative">
+    <span className="inline-flex items-center ml-1">
       <button
+        ref={btnRef}
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className="w-3.5 h-3.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500 flex items-center justify-center text-[9px] font-bold leading-none transition-colors"
         aria-label="ヘルプ"
       >?</button>
-      {open && (
-        <div className="absolute left-0 top-5 z-50 w-56 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg shadow-lg">
+      {open && createPortal(
+        <div
+          style={{ position: 'fixed', top: pos.top, left: Math.min(pos.left, window.innerWidth - 240), zIndex: 99999 }}
+          className="w-56 p-2 bg-slate-800 text-white text-[10px] leading-relaxed rounded-lg shadow-lg"
+        >
           {text}
           <div className="absolute -top-1 left-1.5 w-2 h-2 bg-slate-800 rotate-45" />
-        </div>
+        </div>,
+        document.body
       )}
     </span>
   );
